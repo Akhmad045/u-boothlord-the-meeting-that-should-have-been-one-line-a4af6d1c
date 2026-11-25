@@ -32,6 +32,12 @@ def validate(text: str) -> list:
         errors.append("entry must be a single line")
     if any(ord(c) < 0x20 for c in text):
         errors.append("entry contains control characters")
+    # The brief asks for one sentence: exactly one sentence terminator,
+    # and it must close the line (so "Dr. No" style fragments and run-on
+    # second sentences are caught, not just newlines).
+    terminators = sum(1 for c in text if c in ".!?")
+    if terminators != 1 or not text.rstrip().endswith((".", "!", "?")):
+        errors.append("entry must be exactly one sentence")
     try:
         text.encode("utf-8")
     except UnicodeEncodeError:
@@ -72,6 +78,8 @@ def self_test() -> int:
         "over 200 chars": "x" * 201,
         "multi-line": "first line\nsecond line",
         "control char": "hello\x01world",
+        "two sentences": "First sentence. Second sentence.",
+        "no terminator": "a line with no full stop",
     }
     for name, bad in bad_cases.items():
         if not validate(bad):
